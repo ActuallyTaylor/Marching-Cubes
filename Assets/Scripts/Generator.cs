@@ -5,12 +5,18 @@ using System.Linq;
 
 public class Generator : MonoBehaviour
 {
+    public enum NoiseEnum { Noise3D, Noise2D };
+
     public Vector3 chunkSize;
+    public Vector3 regionSize;
     public int seed;
     public Vector3 offset;
     [Range(-1, 1)]
     public float threshold;
     public Material material;
+    public bool drawDebugSqaures;
+    public NoiseEnum NType;
+    public int scale2D;
 
     int chunkWidth;
     int chunkHeight;
@@ -25,14 +31,23 @@ public class Generator : MonoBehaviour
 
         //For testing position will be a custom value,  but in actualy runs it should be turned into the position of the chunk
         //position = transform.position;
-        position = new Vector3(0, 0, 0);
-        fastNoiseMesh();
-        position = new Vector3(chunkWidth, 0, 0);
-        fastNoiseMesh();
-        position = new Vector3(chunkWidth, chunkHeight, 0);
-        fastNoiseMesh();
-        position = new Vector3(0, chunkHeight, 0);
-        fastNoiseMesh();
+        for(int j = 1; j <= regionSize.x; j ++)
+        {
+            for (int i = 1; i <= regionSize.y; i++)
+            {
+                for (int k = 1; k <= regionSize.z; k++)
+                {
+                    position = new Vector3(chunkWidth * j, chunkHeight * i, chunkDepth * k);
+                    if(NType == NoiseEnum.Noise3D)
+                    {
+                        load3DMesh();
+                    } else if(NType == NoiseEnum.Noise2D)
+                    {
+                        load2Dmesh();
+                    }
+                }
+            }
+        }
 
     }
 
@@ -41,27 +56,102 @@ public class Generator : MonoBehaviour
 
     }
 
-    void fastNoiseMesh()
+    void load2Dmesh()
     {
-        FastNoise myNoise = new FastNoise();
-        myNoise.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
-        myNoise.SetSeed(seed);
+        FastNoise noise2D = new FastNoise();
+        noise2D.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
+        noise2D.SetSeed(seed);
+
+        float[,] heightMap = new float[chunkWidth, chunkDepth];
+
+        List<CombineInstance> blockData = new List<CombineInstance>();
+        for (int x = 0; x < chunkWidth; x++)
+        {
+            for (int y = 0; y < chunkDepth; y++)
+            {
+                heightMap[x, y] = noise2D.GetNoise(x + position.x + offset.x, y + position.z + offset.y);
+            }
+        }
+
+        for (int x = 0; x < chunkWidth; x++)
+        {
+            for (int y = 0; y < chunkDepth; y++)
+            {
+                Cube cube = new Cube();
+                cube.drawFullCube();
+
+                GameObject gCube = new GameObject("SubCube");
+                cube.calculateTriangles();
+                MeshFilter meshFilter = gCube.AddComponent<MeshFilter>();
+                MeshRenderer mr = gCube.AddComponent<MeshRenderer>();
+                float heightValue = heightMap[x, y] * scale2D;
+
+                gCube.transform.position = new Vector3(x + position.x, heightValue ,y + position.z);
+
+                meshFilter.mesh.vertices = cube.getVerts().ToArray();
+                meshFilter.mesh.triangles = cube.getTriangles().ToArray();
+                CombineInstance ci = new CombineInstance
+                {
+                    mesh = gCube.GetComponent<MeshFilter>().mesh,
+                    transform = gCube.transform.localToWorldMatrix,
+                };
+                blockData.Add(ci);
+                Destroy(gCube);
+            }
+        }
+
+        List<List<CombineInstance>> blockDataLists = new List<List<CombineInstance>>();
+        int vertexCount = 0;
+        blockDataLists.Add(new List<CombineInstance>());
+        for (int i = 0; i < blockData.Count; i++)
+        {
+            vertexCount += blockData[i].mesh.vertexCount;
+            if (vertexCount > 65536)
+            {
+                vertexCount = 0;
+                blockDataLists.Add(new List<CombineInstance>());
+                i--;
+            }
+            else
+            {
+                blockDataLists.Last().Add(blockData[i]);
+            }
+        }
+
+        foreach (List<CombineInstance> data in blockDataLists)
+        {
+            GameObject g = new GameObject("Chunk");
+            g.transform.parent = transform;
+            MeshFilter mf = g.AddComponent<MeshFilter>();
+            MeshRenderer mr = g.AddComponent<MeshRenderer>();
+            mr.material = mr.material = material;
+            mf.mesh.CombineMeshes(data.ToArray());
+            mf.mesh.RecalculateNormals();
+            //g.AddComponent<MeshCollider>().sharedMesh = mf.sharedMesh;
+        }
+    }
+
+    void load3DMesh()
+    {
+        FastNoise noise3D = new FastNoise();
+        noise3D.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
+        noise3D.SetSeed(seed);
         float[,,] heightMap = new float[chunkWidth, chunkHeight, chunkDepth];
 
         List<CombineInstance> blockData = new List<CombineInstance>();
-        //MeshFilter blockMesh = Instantiate(GameObject.CreatePrimitive(PrimitiveType.Cube), Vector3.zero, Quaternion.identity).GetComponent<MeshFilter>();
-        Transform container = new GameObject("World").transform;
+        //Load heightmap
         for (int x = 0; x < chunkWidth; x++)
         {
             for (int y = 0; y < chunkHeight; y++)
             {
                 for (int z = 0; z < chunkDepth; z++)
                 {
-                    heightMap[x, y, z] = myNoise.GetNoise(x + position.x + offset.x, y + position.y + offset.y, z + position.z + offset.z);
+                    heightMap[x, y, z] = noise3D.GetNoise(x + position.x + offset.x, y + position.y + offset.y, z + position.z + offset.z);
                 }
             }
         }
 
+        //Evaluate heightmap
         for (int x = 0; x < chunkWidth; x++)
         {
             for (int y = 0; y < chunkHeight; y++)
@@ -72,7 +162,7 @@ public class Generator : MonoBehaviour
                     if (densityValue >= threshold)
                     {
                         Cube cube = new Cube();
-                        if(y == chunkHeight - 1 || x == chunkWidth - 1 || z == chunkDepth - 1)
+                        if(y == chunkHeight - 1 || x == chunkWidth - 1 || z == chunkDepth - 1 || x == 0 || y == 0 || z == 0)
                         {
                             cube.drawFullCube();
                         } else
@@ -107,41 +197,36 @@ public class Generator : MonoBehaviour
                         if (cube.getVerts().Count > 0)
                         {
                             GameObject gCube = new GameObject("SubCube");
-                            gCube.transform.parent = container;
                             cube.calculateTriangles();
                             MeshFilter meshFilter = gCube.AddComponent<MeshFilter>();
                             MeshRenderer mr = gCube.AddComponent<MeshRenderer>();
                             gCube.transform.position = new Vector3(x + position.x, y + position.y, z + position.z);
 
-                            mr.material = material;
                             meshFilter.mesh.vertices = cube.getVerts().ToArray();
                             meshFilter.mesh.triangles = cube.getTriangles().ToArray();
-                            meshFilter.mesh.RecalculateNormals();
+                            CombineInstance ci = new CombineInstance
+                            {
+                                mesh = gCube.GetComponent<MeshFilter>().mesh,
+                                transform = gCube.transform.localToWorldMatrix,
+                            };
+                            blockData.Add(ci);
+                            Destroy(gCube);
                         }
-
-
-                        /*                        blockMesh.transform.position = new Vector3(x + position.x, y + position.y, z + position.z);
-                                                CombineInstance ci = new CombineInstance
-                                                {
-                                                    mesh = blockMesh.sharedMesh,
-                                                    transform = blockMesh.transform.localToWorldMatrix,
-                                                };
-                                                blockData.Add(ci);
-                         */
                     } else
                     {
-                        //GameObject testCube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                        //testCube.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
-                        //testCube.GetComponent<MeshRenderer>().material.color = Color.gray;
-                        //testCube.transform.position = new Vector3(x + position.x + 0.5f, y + position.y + 0.5f, z + position.z + 0.5f);
+                        if(drawDebugSqaures)
+                        {
+                            GameObject testCube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                            testCube.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
+                            testCube.GetComponent<MeshRenderer>().material.color = Color.gray;
+                            testCube.transform.position = new Vector3(x + position.x + 0.5f, y + position.y + 0.5f, z + position.z + 0.5f);
+                        }
                     }
                 }
             }
         }
 
-        /*
-         * Destroy(blockMesh.gameObject);
-
+      
         List<List<CombineInstance>> blockDataLists = new List<List<CombineInstance>>();
         int vertexCount = 0;
         blockDataLists.Add(new List<CombineInstance>());
@@ -160,17 +245,16 @@ public class Generator : MonoBehaviour
             }
         }
 
-        Transform container = new GameObject("World").transform;
         foreach (List<CombineInstance> data in blockDataLists)
         {
             GameObject g = new GameObject("Chunk");
-            g.transform.parent = container;
+            g.transform.parent = transform;
             MeshFilter mf = g.AddComponent<MeshFilter>();
             MeshRenderer mr = g.AddComponent<MeshRenderer>();
-            mr.material = blockMesh.GetComponent<MeshRenderer>().material;
+            mr.material = mr.material = material;
             mf.mesh.CombineMeshes(data.ToArray());
+            mf.mesh.RecalculateNormals();
             //g.AddComponent<MeshCollider>().sharedMesh = mf.sharedMesh;
         }
-        */
     }
 }

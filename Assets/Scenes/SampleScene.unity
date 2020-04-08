@@ -203,10 +203,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   chunkSize: {x: 16, y: 16, z: 16}
-  seed: -5392
+  regionSize: {x: 25, y: 1, z: 25}
+  seed: 0
   offset: {x: 0, y: 0, z: 0}
   threshold: 0
   material: {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
+  drawDebugSqaures: 0
+  NType: 1
+  scale2D: 45
 --- !u!1001 &668968638
 PrefabInstance:
   m_ObjectHideFlags: 0
