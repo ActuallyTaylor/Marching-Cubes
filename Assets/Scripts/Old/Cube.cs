@@ -4,16 +4,18 @@ using UnityEngine;
 
 public class Cube
 {
-
-    MeshFilter meshFilter;
-
     List<Vector3> vertices = new List<Vector3>();
     List<int> tris = new List<int>();
 
     int numFaces;
 
-    public Cube (Vector3 pos, Transform parent, Material material)
+    public Cube ()
     {
+
+    }
+
+    public void createFullCube(Vector3 pos, Transform parent, Material material)
+    {/*
         GameObject cube = new GameObject("Cube - X: " + pos.x + " Y: " + pos.y + " Z: " + pos.z);
         cube.transform.parent = parent;
         cube.transform.position = pos;
@@ -23,39 +25,30 @@ public class Cube
         MeshRenderer mr = cube.AddComponent<MeshRenderer>();
         mr.material = material;
         cube.transform.position = pos;
+        */
     }
 
     public List<Vector3> getVerts()
     {
-        drawCube();
         return vertices;
     }
 
     public List<int> getTriangles()
     {
-        drawCube();
         return tris;
     }
 
-    void drawCube()
+    public void drawFullCube()
     {
-        Mesh mesh = new Mesh();
         drawFront();
         drawLeft();
         drawRight();
         drawBack();
         drawTop();
         drawBottom();
-
-        calculateTriangles();
-        mesh.vertices = vertices.ToArray();
-        mesh.triangles = tris.ToArray();
-
-        meshFilter.mesh = mesh;
-        mesh.RecalculateNormals();
     }
 
-    void calculateTriangles()
+    public void calculateTriangles()
     {
         int tl = vertices.Count - 4 * numFaces;
         for (int i = 0; i < numFaces; i++)
@@ -65,7 +58,7 @@ public class Cube
         }
     }
 
-    void drawFront()
+    public void drawFront()
     {
         vertices.Add(new Vector3(0, 0, 0));
         vertices.Add(new Vector3(0, 1, 0));
@@ -75,7 +68,7 @@ public class Cube
         numFaces ++;
     }
 
-    void drawBack()
+    public void drawBack()
     {
         vertices.Add(new Vector3(1, 0, 1));
         vertices.Add(new Vector3(1, 1, 1));
@@ -85,7 +78,7 @@ public class Cube
         numFaces ++;
     }
 
-    void drawTop()
+    public void drawTop()
     {
         vertices.Add(new Vector3(0, 1, 0));
         vertices.Add(new Vector3(0, 1, 1));
@@ -95,7 +88,7 @@ public class Cube
         numFaces++;
     }
 
-    void drawRight()
+    public void drawRight()
     {
         vertices.Add(new Vector3(1, 0, 0));
         vertices.Add(new Vector3(1, 1, 0));
@@ -105,7 +98,7 @@ public class Cube
         numFaces++;
     }
 
-    void drawLeft()
+    public void drawLeft()
     {
         vertices.Add(new Vector3(0, 0, 1));
         vertices.Add(new Vector3(0, 1, 1));
@@ -115,7 +108,7 @@ public class Cube
         numFaces++;
     }
 
-    void drawBottom()
+    public void drawBottom()
     {
         vertices.Add(new Vector3(0, 0, 0));
         vertices.Add(new Vector3(1, 0, 0));

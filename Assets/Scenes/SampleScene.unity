@@ -203,9 +203,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   chunkSize: {x: 16, y: 16, z: 16}
-  seed: -4444
+  seed: -5392
   offset: {x: 0, y: 0, z: 0}
   threshold: 0
+  material: {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
 --- !u!1001 &668968638
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -390,13 +391,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 705507993}
-  m_LocalRotation: {x: 0.40821788, y: -0.23456968, z: 0.10938163, w: 0.8754261}
+  m_LocalRotation: {x: 0.008364608, y: 0.4561994, z: -0.8793461, w: 0.13624518}
   m_LocalPosition: {x: 0, y: 3, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
+  m_LocalEulerAnglesHint: {x: 126.429, y: 190.636, z: 22.994995}
 --- !u!20 &1184097489 stripped
 Camera:
   m_CorrespondingSourceObject: {fileID: 1457498285320717002, guid: 6502c1556dbd4e94896c30d2cd7edeaa,

@@ -390,3 +390,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   material: {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
   viewer: {fileID: 208244986}
+  drawTop: 1
+  drawBottom: 1
+  drawFront: 1
+  drawBack: 1
+  drawLeft: 1
+  drawRight: 1
