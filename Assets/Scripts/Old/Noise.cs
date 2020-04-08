@@ -37,13 +37,13 @@ public class Noise : MonoBehaviour
 
                     for (int i = 0; i < octaves; i++)
                     {
-                        float sampleX = (x + octaveOffsets[i].x) / scale * frequency;
-                        float sampleY = (y + octaveOffsets[i].y) / scale * frequency;
-                        float sampleZ = (z + octaveOffsets[i].z) / scale * frequency;
+                        float sampleX = (x + seed)  / scale * frequency;
+                        float sampleY = (y + seed)  / scale * frequency;
+                        float sampleZ = (z + seed)  / scale * frequency;
 
                         float perlinValue = Perlin3D(sampleX, sampleY, sampleZ);
 
-                        noiseDensity += perlinValue * amplitude;
+                        noiseDensity = perlinValue * amplitude;
                         amplitude *= persistance;
                         frequency *= lacurnarity;
 
