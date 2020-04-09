@@ -89,52 +89,52 @@ public class Generator : MonoBehaviour
                     if (densityValue >= threshold)
                     {
                         Cube cube = new Cube();
-                            if (y < chunkHeight - 1 && heightMap[x, y + 1, z] < threshold) //Top
-                            {
-                                cube.drawTop();
-                            } else if(y == chunkHeight - 1)
-                            {
-                                cube.drawTop();
-                            }
+                        if (y < chunkHeight - 1 && heightMap[x, y + 1, z] < threshold) //Top
+                        {
+                            cube.drawTop();
+                        } else if(y == chunkHeight - 1)
+                        {
+                            cube.drawTop();
+                        }
 
-                            if (y > 0 && heightMap[x, y - 1, z] < threshold) //Bottom
-                            {
-                                cube.drawBottom();
-                            } else if(y == 0)
-                            {
-                                cube.drawBottom();
-                            }
+                        if (y > 0 && heightMap[x, y - 1, z] < threshold) //Bottom
+                        {
+                            cube.drawBottom();
+                        } else if(y == 0)
+                        {
+                            cube.drawBottom();
+                        }
 
-                            if (z < chunkDepth - 1 && heightMap[x, y, z + 1] < threshold) //Back
-                            {
-                                cube.drawBack();
-                            } else if(z == chunkDepth -1)
-                            {
-                                cube.drawBack();
-                            }
+                        if (z < chunkDepth - 1 && heightMap[x, y, z + 1] < threshold) //Back
+                        {
+                            cube.drawBack();
+                        } else if(z == chunkDepth -1)
+                        {
+                            cube.drawBack();
+                        }
 
-                            if (z > 0 && heightMap[x, y, z - 1] < threshold) //Front
-                            {
-                                cube.drawFront();
-                            } else if(z == 0)
-                            {
-                                cube.drawFront();
-                            }
+                        if (z > 0 && heightMap[x, y, z - 1] < threshold) //Front
+                        {
+                            cube.drawFront();
+                        } else if(z == 0)
+                        {
+                            cube.drawFront();
+                        }
 
-                            if (x < chunkWidth - 1 && heightMap[x + 1, y, z] < threshold) //Right
-                            {
-                                cube.drawRight();
-                            } else if ( x == chunkWidth - 1)
-                            {
-                                cube.drawRight();
-                            }
+                        if (x < chunkWidth - 1 && heightMap[x + 1, y, z] < threshold) //Right
+                        {
+                            cube.drawRight();
+                        } else if ( x == chunkWidth - 1)
+                        {
+                            cube.drawRight();
+                        }
 
-                            if (x > 0 && heightMap[x - 1, y, z] < threshold) //left
-                            {
-                                cube.drawLeft();
-                            } else if ( x == 0)
-                            {
-                                cube.drawLeft();
+                        if (x > 0 && heightMap[x - 1, y, z] < threshold) //left
+                        {
+                            cube.drawLeft();
+                        } else if ( x == 0)
+                        {
+                            cube.drawLeft();
                         }
 
 
