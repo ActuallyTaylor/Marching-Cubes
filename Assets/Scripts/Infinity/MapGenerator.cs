@@ -3,42 +3,39 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Threading;
 using System;
-using System.Linq;
 
-public class GenerateTerrrain: MonoBehaviour
+public class MapGenerator : MonoBehaviour
 {
     public Vector3 chunkSize;
-    public int seed = 0;
+    public int seed;
     public Vector3 offset;
-    [Range(-1, 1)]
+    [Range(-1,1)]
     public float threshold;
-    public Material material;
-
     int chunkWidth;
     int chunkHeight;
     int chunkDepth;
 
-    Queue<MapThreadInfo<mData>> mapDataThreadInfoQueue = new Queue<MapThreadInfo<mData>>();
+    Queue<MapThreadInfo<MapData>> mapDataThreadInfoQueue = new Queue<MapThreadInfo<MapData>>();
     Queue<MapThreadInfo<VoxelMeshData>> meshDataThreadInfoQueue = new Queue<MapThreadInfo<VoxelMeshData>>();
 
     void Start()
     {
-        chunkWidth = (int)chunkSize.x;
+        chunkWidth = (int) chunkSize.x;
         chunkHeight = (int)chunkSize.y;
         chunkDepth = (int)chunkSize.z;
 
     }
+
     void Update()
     {
-        if (mapDataThreadInfoQueue.Count > 0)
+        if(mapDataThreadInfoQueue.Count > 0)
         {
-            for (int i = 0; i < mapDataThreadInfoQueue.Count; i++)
+            for(int i = 0; i < mapDataThreadInfoQueue.Count; i++)
             {
-                MapThreadInfo<mData> threadInfo = mapDataThreadInfoQueue.Dequeue();
+                MapThreadInfo<MapData> threadInfo = mapDataThreadInfoQueue.Dequeue();
                 threadInfo.callback(threadInfo.parameter);
             }
         }
-
         if (meshDataThreadInfoQueue.Count > 0)
         {
             for (int i = 0; i < meshDataThreadInfoQueue.Count; i++)
@@ -49,8 +46,44 @@ public class GenerateTerrrain: MonoBehaviour
         }
     }
 
+    public void requestMapData(Action<MapData> callback, Vector3 center)
+    {
+        ThreadStart threadStart = delegate
+        {
+            mapDataThread(callback, center);
+        };
 
-    mData generateMData(Vector3 center) {
+        new Thread(threadStart).Start();
+    }
+
+    void mapDataThread(Action<MapData> callback, Vector3 center)
+    {
+        MapData mapData = generateMapData(center);
+        lock(mapDataThreadInfoQueue)
+        {
+            mapDataThreadInfoQueue.Enqueue(new MapThreadInfo<MapData>(callback, mapData));
+        }
+    }
+
+    public void requestMeshData(MapData mapData, Action<VoxelMeshData> callback)
+    {
+        ThreadStart threadStart = delegate {
+            meshDataThread(mapData, callback);
+        };
+        new Thread(threadStart).Start();
+    }
+
+    void meshDataThread(MapData mapData, Action<VoxelMeshData> callback)
+    {
+        VoxelMeshData meshData = CreateMesh(mapData.heightMap);
+        lock(meshDataThreadInfoQueue)
+        {
+            meshDataThreadInfoQueue.Enqueue(new MapThreadInfo<VoxelMeshData>(callback, meshData));
+        }
+    }
+
+    MapData generateMapData(Vector3 center)
+    {
         FastNoise noise3D = new FastNoise();
         noise3D.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
         noise3D.SetSeed(seed);
@@ -66,7 +99,7 @@ public class GenerateTerrrain: MonoBehaviour
                 }
             }
         }
-        return new mData(heightMap);
+        return new MapData(heightMap);
     }
 
 
@@ -84,101 +117,65 @@ public class GenerateTerrrain: MonoBehaviour
                     float densityValue = heightMap[x, y, z];
                     if (densityValue >= threshold)
                     {
-                        Vector3 center = new Vector3(x, y, z);
+                        Vector3 currPos = new Vector3(x, y, z);
                         if (y < chunkHeight - 1 && heightMap[x, y + 1, z] < threshold) //Top
                         {
-                            meshData.drawTop(center);
+                            meshData.drawTop(currPos);
                         }
                         else if (y == chunkHeight - 1)
                         {
-                            meshData.drawTop(center);
+                            meshData.drawTop(currPos);
                         }
 
                         if (y > 0 && heightMap[x, y - 1, z] < threshold) //Bottom
                         {
-                            meshData.drawBottom(center);
+                            meshData.drawBottom(currPos);
                         }
                         else if (y == 0)
                         {
-                            meshData.drawBottom(center);
+                            meshData.drawBottom(currPos);
                         }
 
                         if (z < chunkDepth - 1 && heightMap[x, y, z + 1] < threshold) //Back
                         {
-                            meshData.drawBack(center);
+                            meshData.drawBack(currPos);
                         }
                         else if (z == chunkDepth - 1)
                         {
-                            meshData.drawBack(center);
+                            meshData.drawBack(currPos);
                         }
 
                         if (z > 0 && heightMap[x, y, z - 1] < threshold) //Front
                         {
-                            meshData.drawFront(center);
+                            meshData.drawFront(currPos);
                         }
                         else if (z == 0)
                         {
-                            meshData.drawFront(center);
+                            meshData.drawFront(currPos);
                         }
 
                         if (x < chunkWidth - 1 && heightMap[x + 1, y, z] < threshold) //Right
                         {
-                            meshData.drawRight(center);
+                            meshData.drawRight(currPos);
                         }
                         else if (x == chunkWidth - 1)
                         {
-                            meshData.drawRight(center);
+                            meshData.drawRight(currPos);
                         }
 
                         if (x > 0 && heightMap[x - 1, y, z] < threshold) //left
                         {
-                            meshData.drawLeft(center);
+                            meshData.drawLeft(currPos);
                         }
                         else if (x == 0)
                         {
-                            meshData.drawLeft(center);
+                            meshData.drawLeft(currPos);
                         }
                     }
                 }
             }
         }
         return meshData;
-    }
-
-    public void RequestVMapData(Vector3 center, Action<mData> callback)
-    {
-        ThreadStart threadStart = delegate {
-            VMapDataThread(center, callback);
-        };
-
-        new Thread(threadStart).Start();
-    }
-
-    void VMapDataThread(Vector3 center, Action<mData> callback)
-    {
-        mData mData = generateMData(center);
-        lock (mapDataThreadInfoQueue)
-        {
-            mapDataThreadInfoQueue.Enqueue(new MapThreadInfo<mData>(callback, mData));
-        }
-    }
-
-    public void RequestVMeshData(mData mData, Action<VoxelMeshData> callback)
-    {
-        ThreadStart threadStart = delegate {
-            VMeshDataThread(mData,callback);
-        };
-
-        new Thread(threadStart).Start();
-    }
-
-    void VMeshDataThread(mData mData, Action<VoxelMeshData> callback)
-    {
-        VoxelMeshData meshData = CreateMesh(mData.heightMap);
-        lock (meshDataThreadInfoQueue)
-        {
-            meshDataThreadInfoQueue.Enqueue(new MapThreadInfo<VoxelMeshData>(callback, meshData));
-        }
     }
 
     struct MapThreadInfo<T>
@@ -191,15 +188,14 @@ public class GenerateTerrrain: MonoBehaviour
             this.callback = callback;
             this.parameter = parameter;
         }
-
     }
 }
 
-public struct mData
+public struct MapData
 {
     public readonly float[,,] heightMap;
 
-    public mData(float[,,] heightMap)
+    public MapData(float[,,] heightMap)
     {
         this.heightMap = heightMap;
     }
