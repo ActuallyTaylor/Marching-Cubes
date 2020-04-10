@@ -2,36 +2,36 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class EndlessTerrain : MonoBehaviour
+public class Endless2DTerrain : MonoBehaviour
 {
-    public const float maxViewDist = 100;
+    public const float maxViewDist = 250;
     public Transform viewer;
     public Material material;
 
     public static Vector3 viewerPosition;
-    static MapGenerator mapGenerator;
+    static Map2DGenerator mapGenerator;
 
     int chunkSize = 16;
     int chunksVisibleInViewDst; // Chunks to render around the player
 
-    Dictionary<Vector3, chunk> chunkDictionary = new Dictionary<Vector3, chunk>();
-    List<chunk> chunksVisibleLastUpdate = new List<chunk>();
+    Dictionary<Vector3, chunk2D> chunkDictionary = new Dictionary<Vector3, chunk2D>();
+    List<chunk2D> chunksVisibleLastUpdate = new List<chunk2D>();
 
     void Start()
     {
-        mapGenerator = FindObjectOfType<MapGenerator>();
+        mapGenerator = FindObjectOfType<Map2DGenerator>();
         chunksVisibleInViewDst = Mathf.RoundToInt(maxViewDist / chunkSize);
     }
 
     void Update()
     {
-        viewerPosition = new Vector3(viewer.position.x, viewer.position.y, viewer.position.z);
+        viewerPosition = new Vector2(viewer.position.x, viewer.position.z);
         updateVisibleChunks();
     }
 
     void updateVisibleChunks()
     {
-        for(int i = 0; i < chunksVisibleLastUpdate.Count; i ++)
+        for (int i = 0; i < chunksVisibleLastUpdate.Count; i++)
         {
             chunksVisibleLastUpdate[i].SetVisible(false);
         }
@@ -39,55 +39,53 @@ public class EndlessTerrain : MonoBehaviour
 
         int currentChunkCoordX = Mathf.RoundToInt(viewerPosition.x / chunkSize);
         int currentChunkCoordY = Mathf.RoundToInt(viewerPosition.y / chunkSize);
-        int currentChunkCoordZ = Mathf.RoundToInt(viewerPosition.z / chunkSize);
 
         for (int xOffset = -chunksVisibleInViewDst; xOffset <= chunksVisibleInViewDst; xOffset++)
         {
-            for (int zOffset = -chunksVisibleInViewDst; zOffset <= chunksVisibleInViewDst; zOffset++)
+            for (int yOffset = -chunksVisibleInViewDst; yOffset <= chunksVisibleInViewDst; yOffset++)
             {
-                for (int yOffset = -chunksVisibleInViewDst; yOffset <= chunksVisibleInViewDst; yOffset++)
-                {
-                    Vector3 viewedChunkCoord = new Vector3(currentChunkCoordX + xOffset, currentChunkCoordY + yOffset, currentChunkCoordZ + zOffset);
+                Vector2 viewedChunkCoord = new Vector2(currentChunkCoordX + xOffset, currentChunkCoordY + yOffset);
 
-                    if(chunkDictionary.ContainsKey(viewedChunkCoord))
+                if (chunkDictionary.ContainsKey(viewedChunkCoord))
+                {
+                    chunkDictionary[viewedChunkCoord].UpdateChunk();
+                    if (chunkDictionary[viewedChunkCoord].isVisible())
                     {
-                        chunkDictionary[viewedChunkCoord].UpdateChunk();
-                        if(chunkDictionary[viewedChunkCoord].isVisible())
-                        {
-                            chunksVisibleLastUpdate.Add(chunkDictionary[viewedChunkCoord]);
-                        }
-                    } else
-                    {
-                        chunkDictionary.Add(viewedChunkCoord, new chunk(viewedChunkCoord, chunkSize, transform, material));
+                        chunksVisibleLastUpdate.Add(chunkDictionary[viewedChunkCoord]);
                     }
+                }
+                else
+                {
+                    chunkDictionary.Add(viewedChunkCoord, new chunk2D(viewedChunkCoord, chunkSize, transform, material));
                 }
             }
         }
     }
 
-    public class chunk
+    public class chunk2D
     {
         GameObject meshObject;
-        Vector3 position;
+        Vector2 position;
         Bounds bounds;
         MeshRenderer meshRenderer;
         MeshFilter meshFilter;
 
-        public chunk(Vector3 coord, int size, Transform parent, Material material)
+        public chunk2D(Vector2 coord, int size, Transform parent, Material material)
         {
             position = coord * size;
             bounds = new Bounds(position, Vector3.one * size);
+            Vector3 posV3 = new Vector3(position.x, 0, position.y);
 
             meshObject = new GameObject("Chunk");
             meshRenderer = meshObject.AddComponent<MeshRenderer>();
             meshFilter = meshObject.AddComponent<MeshFilter>();
             meshRenderer.material = material;
 
-            meshObject.transform.position = position;
+            meshObject.transform.position = posV3;
             meshObject.transform.parent = parent;
             SetVisible(false);
 
-            mapGenerator.requestMapData(onMapDataRecieved, position);
+            mapGenerator.request2DMapData(onMapDataRecieved, position);
         }
 
         public void UpdateChunk()
@@ -106,9 +104,9 @@ public class EndlessTerrain : MonoBehaviour
             return meshObject.activeSelf;
         }
 
-        void onMapDataRecieved(MapData mapData)
+        void onMapDataRecieved(Map2DData mapData)
         {
-            mapGenerator.requestMeshData(mapData, onMeshDataReceived);
+            mapGenerator.request2DMeshData(mapData, onMeshDataReceived);
         }
 
         void onMeshDataReceived(VoxelMeshData meshData)

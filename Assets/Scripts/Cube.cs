@@ -58,6 +58,14 @@ public class Cube
         }
     }
 
+    public void drawLarge()
+    {
+        vertices.Add(new Vector3(16, 0, 16));
+        vertices.Add(new Vector3(16, 16, 16));
+        vertices.Add(new Vector3(0, 16, 16));
+        vertices.Add(new Vector3(0, 0, 16));
+    }
+
     public void drawFront()
     {
         vertices.Add(new Vector3(0, 0, 0));

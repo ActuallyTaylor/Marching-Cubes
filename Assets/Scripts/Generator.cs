@@ -19,6 +19,7 @@ public class Generator : MonoBehaviour
     public DimensionEnum DimensionType;
     public NoiseTypes NoiseType;
     public int scale2D;
+    public bool removeFullChunks;
 
     int chunkWidth;
     int chunkHeight;
@@ -63,80 +64,76 @@ public class Generator : MonoBehaviour
         FastNoise noise3D = new FastNoise();
         noise3D.SetNoiseType(getNoiseType());
         noise3D.SetSeed(seed);
-        float[,,] heightMap = new float[chunkWidth, chunkHeight, chunkDepth];
+        float[,,] heightMap = new float[chunkWidth + 2, chunkHeight + 2, chunkDepth + 2];
+        bool lessThenThreshold = false;
 
         List<CombineInstance> blockData = new List<CombineInstance>();
         //Load heightmap
-        for (int x = 0; x < chunkWidth; x++)
+        for (int x = 0; x < chunkWidth + 2; x++)
         {
-            for (int y = 0; y < chunkHeight; y++)
+            for (int y = 0; y < chunkHeight + 2; y++)
             {
-                for (int z = 0; z < chunkDepth; z++)
+                for (int z = 0; z < chunkDepth + 2; z++)
                 {
                     heightMap[x, y, z] = noise3D.GetNoise(x + position.x + offset.x, y + position.y + offset.y, z + position.z + offset.z);
                 }
             }
         }
 
-        //Evaluate heightmap
         for (int x = 0; x < chunkWidth; x++)
         {
             for (int y = 0; y < chunkHeight; y++)
             {
                 for (int z = 0; z < chunkDepth; z++)
                 {
+                    if(heightMap[x,y,z] < threshold)
+                    {
+                        lessThenThreshold = true;
+                    }
+                }
+            }
+        }
+
+        //Evaluate heightmap
+        for (int x = 1; x < chunkWidth + 2; x++)
+        {
+            for (int y = 1; y < chunkHeight + 2; y++)
+            {
+                for (int z = 1; z < chunkDepth + 2; z++)
+                {
                     float densityValue = heightMap[x, y, z];
                     if (densityValue >= threshold)
                     {
                         Cube cube = new Cube();
-                        if (y < chunkHeight - 1 && heightMap[x, y + 1, z] < threshold) //Top
-                        {
-                            cube.drawTop();
-                        } else if(y == chunkHeight - 1)
+                        if (y <= chunkHeight && heightMap[x, y + 1, z] < threshold) //Top
                         {
                             cube.drawTop();
                         }
 
-                        if (y > 0 && heightMap[x, y - 1, z] < threshold) //Bottom
-                        {
-                            cube.drawBottom();
-                        } else if(y == 0)
+                        if (y >= 0 && heightMap[x, y - 1, z] < threshold) //Bottom
                         {
                             cube.drawBottom();
                         }
 
-                        if (z < chunkDepth - 1 && heightMap[x, y, z + 1] < threshold) //Back
-                        {
-                            cube.drawBack();
-                        } else if(z == chunkDepth -1)
+                        if (z <= chunkDepth && heightMap[x, y, z + 1] < threshold) //Back
                         {
                             cube.drawBack();
                         }
 
-                        if (z > 0 && heightMap[x, y, z - 1] < threshold) //Front
-                        {
-                            cube.drawFront();
-                        } else if(z == 0)
+                        if (z >= 0 && heightMap[x, y, z - 1] < threshold) //Front
                         {
                             cube.drawFront();
                         }
 
-                        if (x < chunkWidth - 1 && heightMap[x + 1, y, z] < threshold) //Right
-                        {
-                            cube.drawRight();
-                        } else if ( x == chunkWidth - 1)
+                        if (x <= chunkWidth && heightMap[x + 1, y, z] < threshold) //Right
                         {
                             cube.drawRight();
                         }
 
-                        if (x > 0 && heightMap[x - 1, y, z] < threshold) //left
-                        {
-                            cube.drawLeft();
-                        } else if ( x == 0)
+                        if (x >= 0 && heightMap[x - 1, y, z] < threshold) //left
                         {
                             cube.drawLeft();
                         }
-
 
                         if (cube.getVerts().Count > 0)
                         {
@@ -144,7 +141,7 @@ public class Generator : MonoBehaviour
                             cube.calculateTriangles();
                             MeshFilter meshFilter = gCube.AddComponent<MeshFilter>();
                             MeshRenderer mr = gCube.AddComponent<MeshRenderer>();
-                            gCube.transform.position = new Vector3(x + position.x, y + position.y, z + position.z);
+                            gCube.transform.position = new Vector3(x - 1 + position.x, y - 1 + position.y, z - 1 + position.z);
 
                             meshFilter.mesh.vertices = cube.getVerts().ToArray();
                             meshFilter.mesh.triangles = cube.getTriangles().ToArray();
@@ -156,9 +153,10 @@ public class Generator : MonoBehaviour
                             blockData.Add(ci);
                             Destroy(gCube);
                         }
-                    } else
+                    }
+                    else
                     {
-                        if(drawDebugSqaures)
+                        if (drawDebugSqaures)
                         {
                             GameObject testCube = GameObject.CreatePrimitive(PrimitiveType.Cube);
                             testCube.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
@@ -169,6 +167,7 @@ public class Generator : MonoBehaviour
                 }
             }
         }
+
 
       
         List<List<CombineInstance>> blockDataLists = new List<List<CombineInstance>>();
@@ -325,3 +324,58 @@ public class Generator : MonoBehaviour
         }
     }
 }
+/*
+ * if (y < chunkHeight - 1 && heightMap[x, y + 1, z] < threshold) //Top
+                            {
+                                cube.drawTop();
+                            }
+                            else if (y == chunkHeight - 1)
+                            {
+                                cube.drawTop();
+                            }
+
+                            if (y > 0 && heightMap[x, y - 1, z] < threshold) //Bottom
+                            {
+                                cube.drawBottom();
+                            }
+                            else if (y == 0)
+                            {
+                                cube.drawBottom();
+                            }
+
+                            if (z < chunkDepth - 1 && heightMap[x, y, z + 1] < threshold) //Back
+                            {
+                                cube.drawBack();
+                            }
+                            else if (z == chunkDepth - 1)
+                            {
+                                cube.drawBack();
+                            }
+
+                            if (z > 0 && heightMap[x, y, z - 1] < threshold) //Front
+                            {
+                                cube.drawFront();
+                            }
+                            else if (z == 0)
+                            {
+                                cube.drawFront();
+                            }
+
+                            if (x < chunkWidth - 1 && heightMap[x + 1, y, z] < threshold) //Right
+                            {
+                                cube.drawRight();
+                            }
+                            else if (x == chunkWidth - 1)
+                            {
+                                cube.drawRight();
+                            }
+
+                            if (x > 0 && heightMap[x - 1, y, z] < threshold) //left
+                            {
+                                cube.drawLeft();
+                            }
+                            else if (x == 0)
+                            {
+                                cube.drawLeft();
+                            }
+*/

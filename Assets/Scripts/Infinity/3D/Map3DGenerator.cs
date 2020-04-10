@@ -4,7 +4,7 @@ using UnityEngine;
 using System.Threading;
 using System;
 
-public class MapGenerator : MonoBehaviour
+public class Map3DGenerator : MonoBehaviour
 {
     public Vector3 chunkSize;
     public int seed;
@@ -23,7 +23,7 @@ public class MapGenerator : MonoBehaviour
         chunkWidth = (int) chunkSize.x;
         chunkHeight = (int)chunkSize.y;
         chunkDepth = (int)chunkSize.z;
-
+        Application.targetFrameRate = 90;
     }
 
     void Update()
@@ -85,15 +85,17 @@ public class MapGenerator : MonoBehaviour
     MapData generateMapData(Vector3 center)
     {
         FastNoise noise3D = new FastNoise();
-        noise3D.SetNoiseType(FastNoise.NoiseType.PerlinFractal);
+        noise3D.SetNoiseType(FastNoise.NoiseType.Cubic);
         noise3D.SetSeed(seed);
-        float[,,] heightMap = new float[chunkWidth, chunkHeight, chunkDepth];
+        //noise3D.SetFrequency(0.05f);
 
-        for (int x = 0; x < chunkWidth; x++)
+        float[,,] heightMap = new float[chunkWidth + 2, chunkHeight + 2, chunkDepth + 2];
+
+        for (int x = 0; x < chunkWidth + 2; x++)
         {
-            for (int y = 0; y < chunkHeight; y++)
+            for (int y = 0; y < chunkHeight + 2; y++)
             {
-                for (int z = 0; z < chunkDepth; z++)
+                for (int z = 0; z < chunkDepth + 2; z++)
                 {
                     heightMap[x, y, z] = noise3D.GetNoise(x + center.x + offset.x, y + center.y + offset.y, z + center.z + offset.z);
                 }
@@ -108,66 +110,42 @@ public class MapGenerator : MonoBehaviour
         VoxelMeshData meshData = new VoxelMeshData();
 
         //Evaluate heightmap
-        for (int x = 0; x < chunkWidth; x++)
+        for (int x = 1; x < chunkWidth + 2; x++)
         {
-            for (int y = 0; y < chunkHeight; y++)
+            for (int y = 1; y < chunkHeight + 2; y++)
             {
-                for (int z = 0; z < chunkDepth; z++)
+                for (int z = 1; z < chunkDepth + 2; z++)
                 {
                     float densityValue = heightMap[x, y, z];
                     if (densityValue >= threshold)
                     {
-                        Vector3 currPos = new Vector3(x, y, z);
-                        if (y < chunkHeight - 1 && heightMap[x, y + 1, z] < threshold) //Top
-                        {
-                            meshData.drawTop(currPos);
-                        }
-                        else if (y == chunkHeight - 1)
+                        Vector3 currPos = new Vector3(x - 1, y - 1, z - 1);
+                        if (y <= chunkHeight && heightMap[x, y + 1, z] < threshold) //Top
                         {
                             meshData.drawTop(currPos);
                         }
 
-                        if (y > 0 && heightMap[x, y - 1, z] < threshold) //Bottom
-                        {
-                            meshData.drawBottom(currPos);
-                        }
-                        else if (y == 0)
+                        if (y >= 0 && heightMap[x, y - 1, z] < threshold) //Bottom
                         {
                             meshData.drawBottom(currPos);
                         }
 
-                        if (z < chunkDepth - 1 && heightMap[x, y, z + 1] < threshold) //Back
-                        {
-                            meshData.drawBack(currPos);
-                        }
-                        else if (z == chunkDepth - 1)
+                        if (z <= chunkDepth && heightMap[x, y, z + 1] < threshold) //Back
                         {
                             meshData.drawBack(currPos);
                         }
 
-                        if (z > 0 && heightMap[x, y, z - 1] < threshold) //Front
-                        {
-                            meshData.drawFront(currPos);
-                        }
-                        else if (z == 0)
+                        if (z >= 0 && heightMap[x, y, z - 1] < threshold) //Front
                         {
                             meshData.drawFront(currPos);
                         }
 
-                        if (x < chunkWidth - 1 && heightMap[x + 1, y, z] < threshold) //Right
-                        {
-                            meshData.drawRight(currPos);
-                        }
-                        else if (x == chunkWidth - 1)
+                        if (x <= chunkWidth && heightMap[x + 1, y, z] < threshold) //Right
                         {
                             meshData.drawRight(currPos);
                         }
 
-                        if (x > 0 && heightMap[x - 1, y, z] < threshold) //left
-                        {
-                            meshData.drawLeft(currPos);
-                        }
-                        else if (x == 0)
+                        if (x >= 0 && heightMap[x - 1, y, z] < threshold) //left
                         {
                             meshData.drawLeft(currPos);
                         }

@@ -13,6 +13,8 @@ public class VoxelGen : MonoBehaviour
     public bool drawBack;
     public bool drawLeft;
     public bool drawRight;
+    public bool drawLarge;
+
     GameObject gCube;
 
     // Start is called before the first frame update
@@ -38,6 +40,10 @@ public class VoxelGen : MonoBehaviour
         gCube.transform.parent = transform;
         gCube.transform.position = transform.position;
 
+        if(drawLarge)
+        {
+            cube.drawLarge();
+        }
         if (drawTop)
         {
             cube.drawTop();
