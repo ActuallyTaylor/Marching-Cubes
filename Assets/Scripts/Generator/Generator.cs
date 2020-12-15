@@ -20,7 +20,7 @@ public class Generator : MonoBehaviour
     public NoiseTypes NoiseType;
     public int scale2D;
     public bool removeFullChunks;
-
+    
     int chunkWidth;
     int chunkHeight;
     int chunkDepth;
@@ -65,7 +65,6 @@ public class Generator : MonoBehaviour
         noise3D.SetNoiseType(getNoiseType());
         noise3D.SetSeed(seed);
         float[,,] heightMap = new float[chunkWidth + 2, chunkHeight + 2, chunkDepth + 2];
-        bool lessThenThreshold = false;
 
         List<CombineInstance> blockData = new List<CombineInstance>();
         //Load heightmap
@@ -80,26 +79,12 @@ public class Generator : MonoBehaviour
             }
         }
 
-        for (int x = 0; x < chunkWidth; x++)
-        {
-            for (int y = 0; y < chunkHeight; y++)
-            {
-                for (int z = 0; z < chunkDepth; z++)
-                {
-                    if(heightMap[x,y,z] < threshold)
-                    {
-                        lessThenThreshold = true;
-                    }
-                }
-            }
-        }
-
         //Evaluate heightmap
-        for (int x = 1; x < chunkWidth + 2; x++)
+        for (int x = 1; x < chunkWidth + 1; x++) //Goes from one to one minus length. This make it skip the two side values so it still makes a 16 by 16 chunk.
         {
-            for (int y = 1; y < chunkHeight + 2; y++)
+            for (int y = 1; y < chunkHeight + 1; y++)
             {
-                for (int z = 1; z < chunkDepth + 2; z++)
+                for (int z = 1; z < chunkDepth + 1; z++)
                 {
                     float densityValue = heightMap[x, y, z];
                     if (densityValue >= threshold)
@@ -194,11 +179,24 @@ public class Generator : MonoBehaviour
             g.transform.parent = transform;
             MeshFilter mf = g.AddComponent<MeshFilter>();
             MeshRenderer mr = g.AddComponent<MeshRenderer>();
-            mr.material = mr.material = material;
             mf.mesh.CombineMeshes(data.ToArray());
+            mr.material = material;
+            mf.mesh.uv = getUvs(mf.mesh);
             mf.mesh.RecalculateNormals();
+            
             //g.AddComponent<MeshCollider>().sharedMesh = mf.sharedMesh;
         }
+    }
+
+    Vector2[] getUvs(Mesh mesh)
+    {
+        Vector2[] uvs = new Vector2[mesh.vertices.Length];
+
+        for (int i = 0; i < uvs.Length; i++)
+        {
+            uvs[i] = new Vector2(mesh.vertices[i].x, mesh.vertices[i].z);
+        }
+        return uvs;
     }
 
     void load2Dmesh()

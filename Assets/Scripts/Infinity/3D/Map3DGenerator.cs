@@ -11,6 +11,9 @@ public class Map3DGenerator : MonoBehaviour
     public Vector3 offset;
     [Range(-1,1)]
     public float threshold;
+    public FastNoise.NoiseType NoiseType;
+    public float frequency;
+
     int chunkWidth;
     int chunkHeight;
     int chunkDepth;
@@ -85,9 +88,9 @@ public class Map3DGenerator : MonoBehaviour
     MapData generateMapData(Vector3 center)
     {
         FastNoise noise3D = new FastNoise();
-        noise3D.SetNoiseType(FastNoise.NoiseType.Cubic);
+        noise3D.SetNoiseType(NoiseType);
         noise3D.SetSeed(seed);
-        //noise3D.SetFrequency(0.05f);
+        noise3D.SetFrequency(frequency);
 
         float[,,] heightMap = new float[chunkWidth + 2, chunkHeight + 2, chunkDepth + 2];
 
@@ -110,11 +113,11 @@ public class Map3DGenerator : MonoBehaviour
         VoxelMeshData meshData = new VoxelMeshData();
 
         //Evaluate heightmap
-        for (int x = 1; x < chunkWidth + 2; x++)
+        for (int x = 1; x < chunkWidth + 1; x++)
         {
-            for (int y = 1; y < chunkHeight + 2; y++)
+            for (int y = 1; y < chunkHeight + 1; y++)
             {
-                for (int z = 1; z < chunkDepth + 2; z++)
+                for (int z = 1; z < chunkDepth + 1; z++)
                 {
                     float densityValue = heightMap[x, y, z];
                     if (densityValue >= threshold)

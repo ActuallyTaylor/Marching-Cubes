@@ -4,8 +4,8 @@ using UnityEngine;
 
 public class Endless3DTerrain : MonoBehaviour
 {
-    public const float maxViewDist = 250;
-    const float viewerMoveThresholdForChunkUpdate = 15f;
+    public const float maxViewDist = 48;
+    const float viewerMoveThresholdForChunkUpdate = 5f;
     const float sqrViewerMoveThresholdForChunkUpdate = viewerMoveThresholdForChunkUpdate * viewerMoveThresholdForChunkUpdate;
 
     public Transform viewer;
@@ -27,6 +27,8 @@ public class Endless3DTerrain : MonoBehaviour
     {
         mapGenerator = FindObjectOfType<Map3DGenerator>();
         chunksVisibleInViewDst = Mathf.RoundToInt(maxViewDist / chunkSize);
+
+
         //updateVisibleChunks();
     }
 
@@ -85,6 +87,7 @@ public class Endless3DTerrain : MonoBehaviour
         Bounds bounds;
         MeshRenderer meshRenderer;
         MeshFilter meshFilter;
+        MeshCollider meshCollider;
 
         public chunk(Vector3 coord, int size, Transform parent, Material material)
         {
@@ -95,7 +98,8 @@ public class Endless3DTerrain : MonoBehaviour
             meshRenderer = meshObject.AddComponent<MeshRenderer>();
             meshFilter = meshObject.AddComponent<MeshFilter>();
             meshRenderer.material = material;
-
+            meshCollider = meshObject.AddComponent<MeshCollider>();
+            meshObject.layer = LayerMask.NameToLayer("Ground");
             meshObject.transform.position = position;
             meshObject.transform.parent = parent;
             SetVisible(false);
@@ -126,7 +130,12 @@ public class Endless3DTerrain : MonoBehaviour
 
         void onMeshDataReceived(VoxelMeshData meshData)
         {
-            meshFilter.mesh = meshData.CreateMesh();
+            Mesh mesh = meshData.CreateMesh();
+            mesh.RecalculateNormals();
+
+            meshFilter.mesh = mesh;
+            meshCollider.sharedMesh = mesh;
+            
         }
     }
 }
